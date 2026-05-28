@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>재주문 즉시할인 적용 예시</title>
+  <title>재주문 즉시할인 예시</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -12,209 +12,243 @@
       padding: 16px;
       color: #333333;
     }
-    .tab-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-    .tab-btn {
-      font-size: 13px; font-weight: 500; padding: 7px 14px;
-      border-radius: 20px;
-      border: 1.5px solid #cccccc;
-      background: #ffffff;
-      color: #666666;
-      cursor: pointer;
-      transition: color 0.15s, background 0.15s;
+
+    /* 아코디언 */
+    .accordion { margin-bottom: 16px; border: 1px solid #e4e6e8; border-radius: 12px; overflow: hidden; }
+    .accordion:last-child { margin-bottom: 0; }
+
+    .acc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; cursor: pointer;
+      background: #ffffff; user-select: none;
     }
-    .tab-btn.active {
-      color: #111111;
-      background: #f3f5f7;
-    }
-    .card {
-      background: #ffffff;
-      border: 1px solid #e4e6e8;
-      border-radius: 12px;
-      padding: 20px 16px 16px;
-    }
-    .case-title { font-size: 16px; font-weight: 700; color: #111111; margin-bottom: 6px; }
-    .case-desc  { font-size: 14px; color: #666666; margin-bottom: 14px; line-height: 1.55; }
+    .acc-header:hover { background: #f9fafb; }
+
+    .acc-header-left { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #111111; }
+
+    .badge-o { background: #EAF3DE; color: #3B6D11; font-size: 13px; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+    .badge-x { background: #FCEBEB; color: #A32D2D; font-size: 13px; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+
+    .acc-arrow { font-size: 12px; color: #999; transition: transform 0.2s; flex-shrink: 0; }
+    .accordion.open .acc-arrow { transform: rotate(180deg); }
+
+    .acc-body { display: none; padding: 0 16px 16px; border-top: 1px solid #e4e6e8; }
+    .accordion.open .acc-body { display: block; }
+
+    /* 카드 */
+    .card { background: #ffffff; border: 1px solid #e4e6e8; border-radius: 10px; padding: 14px; margin-top: 14px; }
+    .card:first-child { margin-top: 16px; }
+    .case-desc { font-size: 13px; color: #666666; margin-bottom: 10px; line-height: 1.55; }
     .result-badge {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 14px; font-weight: 700; padding: 5px 13px;
-      border-radius: 20px; margin-bottom: 18px;
+      font-size: 13px; font-weight: 700; padding: 4px 11px;
+      border-radius: 20px; margin-bottom: 12px;
     }
     .result-o       { background: #EAF3DE; color: #3B6D11; }
     .result-x       { background: #FCEBEB; color: #A32D2D; }
     .result-partial { background: #FAEEDA; color: #633806; }
-
-    .tl-wrap { position: relative; padding-bottom: 8px; }
-    .axis-line {
-      position: absolute; left: 0; right: 0;
-      height: 2px; background: #d0d2d5; top: 56px;
-    }
-    .segments-row {
-      position: absolute; left: 0; right: 0; top: 24px; height: 32px; display: flex;
-    }
-    .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
-    .seg-off { background: #f3f5f7; color: #999999; }
-    .seg-on  { background: #185FA5; color: #B5D4F4; }
-
-    .events-row { position: relative; height: 130px; }
-    .event {
-      position: absolute; display: flex; flex-direction: column; align-items: center;
-      transform: translateX(-50%);
-    }
-    .event-dot {
-      width: 14px; height: 14px; border-radius: 50%;
-      margin-top: 49px; border: 2.5px solid #ffffff;
-    }
-    .dot-order     { background: #888780; }
-    .dot-review    { background: #185FA5; }
-    .dot-reorder   { background: #3B6D11; }
-    .dot-reorder-x { background: #A32D2D; }
-    .event-label {
-      font-size: 13px; font-weight: 500; color: #555555;
-      margin-top: 7px; white-space: nowrap; text-align: center; line-height: 1.35;
-    }
-    .down-arrow {
-      width: 0; height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      position: absolute; top: 43px;
-    }
-    .arrow-blue { border-top: 8px solid #185FA5; }
-    .arrow-red  { border-top: 8px solid #E24B4A; }
-    .arrow-gray { border-top: 8px solid #888780; }
-
+    .tl-svg { width: 100%; display: block; }
     .rule-box {
       background: #f3f5f7; border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px; color: #555555; line-height: 1.65;
-      display: flex; align-items: flex-start; gap: 6px;
+      padding: 9px 11px; margin-top: 10px;
+      font-size: 12px; color: #555555; line-height: 1.65;
+      display: flex; align-items: flex-start; gap: 5px;
     }
     .rule-box strong { color: #111111; font-weight: 700; }
-    .rule-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .divider { border: none; border-top: 1px solid #eaebee; margin: 14px 0 0; }
   </style>
 </head>
 <body>
 
-<div class="tab-row" id="tabs"></div>
-<div class="card" id="content"></div>
+  <!-- 아코디언 1: 할인 적용 -->
+  <div class="accordion" id="acc1">
+    <div class="acc-header" onclick="toggle('acc1')">
+      <div class="acc-header-left">
+        <span class="badge-o">✔</span>
+        이럴땐 재주문 할인이 적용 돼요 (클릭)
+      </div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
 
-<script>
-const BORDER = { o: '#3B6D11', x: '#A32D2D', partial: '#854F0B' };
-const IDLE_BORDER = '1.5px solid #cccccc';
+      <!-- 예시 1 -->
+      <div class="card">
+        <div class="case-desc">할인 기간 내에 주문·리뷰 작성·재주문을 모두 완료한 경우</div>
+        <span class="result-badge result-o">✔ 재주문 할인 적용</span>
+        <svg class="tl-svg" viewBox="0 0 360 90" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"   y="10" width="54"  height="28" fill="#f3f5f7"/>
+          <rect x="54"  y="10" width="252" height="28" fill="#185FA5"/>
+          <rect x="306" y="10" width="54"  height="28" fill="#f3f5f7"/>
+          <text x="27"  y="29" text-anchor="middle" font-size="10" fill="#999">할인 설정 전</text>
+          <text x="180" y="29" text-anchor="middle" font-size="10" fill="#B5D4F4">할인 기간</text>
+          <text x="333" y="29" text-anchor="middle" font-size="10" fill="#999">종료 후</text>
+          <line x1="0" y1="38" x2="360" y2="38" stroke="#d0d2d5" stroke-width="2"/>
+          <polygon points="90,32 85,26 95,26" fill="#888780"/>
+          <circle cx="90" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="90" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문</text>
+          <polygon points="180,32 175,26 185,26" fill="#185FA5"/>
+          <circle cx="180" cy="38" r="7" fill="#185FA5" stroke="#fff" stroke-width="2"/>
+          <text x="180" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 작성</text>
+          <polygon points="270,32 265,26 275,26" fill="#185FA5"/>
+          <circle cx="270" cy="38" r="7" fill="#3B6D11" stroke="#fff" stroke-width="2"/>
+          <text x="270" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">재주문</text>
+        </svg>
+        <div class="rule-box">
+          <span>ℹ️</span>
+          <span>리뷰가 <strong>할인 기간 내</strong>에 작성됐고, 재주문도 <strong>기간 안</strong>에 이뤄졌어요.</span>
+        </div>
+      </div>
 
-const CASES = [
-  {
-    title:"예시 1", resultType:"o",
-    desc:"할인 기간 내에 주문·리뷰 작성·재주문을 모두 완료한 경우",
-    resultLabel:"재주문 할인 적용",
-    rule:"리뷰가 <strong>할인 기간 내</strong>에 작성됐고, 재주문도 <strong>기간 안</strong>에 이뤄졌어요.",
-    segments:[{label:"할인 설정 전",w:15,type:"off"},{label:"할인 기간",w:70,type:"on"},{label:"종료 후",w:15,type:"off"}],
-    events:[{pct:25,label:"주문",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:75,label:"재주문",arrow:"blue",dot:"dot-reorder"}]
-  },
-  {
-    title:"예시 2", resultType:"o",
-    desc:"할인 설정 전에 주문했지만, 할인 기간 내에 리뷰를 작성하고 재주문한 경우",
-    resultLabel:"재주문 할인 적용",
-    rule:"<strong>최초 주문 시점은 무관</strong>해요. 리뷰가 할인 기간 내에 작성되고, 재주문도 기간 안에 이뤄지면 할인이 적용돼요.",
-    segments:[{label:"할인 설정 전",w:20,type:"off"},{label:"할인 기간",w:65,type:"on"},{label:"종료 후",w:15,type:"off"}],
-    events:[{pct:12,label:"주문",arrow:"gray",dot:"dot-order"},{pct:45,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:72,label:"재주문",arrow:"blue",dot:"dot-reorder"}]
-  },
-  {
-    title:"예시 3", resultType:"x",
-    desc:"할인 설정 전에 주문과 리뷰 작성을 완료했고, 할인 기간에 재주문한 경우",
-    resultLabel:"재주문 할인 미적용",
-    rule:"리뷰가 <strong>할인 기간 이전</strong>에 작성됐기 때문에 적용 대상이 아니에요. 기간 내 리뷰 작성이 기준이에요.",
-    segments:[{label:"할인 설정 전",w:35,type:"off"},{label:"할인 기간",w:50,type:"on"},{label:"종료 후",w:15,type:"off"}],
-    events:[{pct:12,label:"주문",arrow:"gray",dot:"dot-order"},{pct:25,label:"리뷰 작성",arrow:"gray",dot:"dot-order"},{pct:60,label:"재주문\n(할인 미적용)",arrow:"red",dot:"dot-reorder-x"}]
-  },
-  {
-    title:"예시 4", resultType:"x",
-    desc:"할인 기간 내에 주문과 리뷰 작성을 완료했고, 할인 종료 후에 재주문한 경우",
-    resultLabel:"재주문 할인 미적용",
-    rule:"재주문이 <strong>할인 종료 후</strong>에 이뤄지면, 할인이 적용되지 않아요.",
-    segments:[{label:"할인 설정 전",w:12,type:"off"},{label:"할인 기간",w:53,type:"on"},{label:"종료 후",w:35,type:"off"}],
-    events:[{pct:28,label:"주문",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:80,label:"재주문\n(할인 미적용)",arrow:"red",dot:"dot-reorder-x"}]
-  },
-  {
-    title:"예시 5", resultType:"partial",
-    desc:"2회 주문 후 할인 기간 내에 리뷰를 2건 작성한 경우, 재주문 할인은 1회만 적용",
-    resultLabel:"재주문 할인 1회만 적용",
-    rule:"<strong>직전 리뷰 1건</strong>에 대해서만 할인이 적용돼요. (누적 적용 X)",
-    segments:[{label:"할인 설정 전",w:10,type:"off"},{label:"할인 기간",w:80,type:"on"},{label:"종료 후",w:10,type:"off"}],
-    events:[{pct:18,label:"주문 1",arrow:"gray",dot:"dot-order"},{pct:32,label:"주문 2",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 1",arrow:"blue",dot:"dot-review"},{pct:64,label:"리뷰 2",arrow:"blue",dot:"dot-review"},{pct:82,label:"재주문\n(1회만 적용)",arrow:"blue",dot:"dot-reorder"}]
-  }
-];
+      <hr class="divider" />
 
-const iconMap = { o:'✔', x:'✖', partial:'▲' };
+      <!-- 예시 2 -->
+      <div class="card">
+        <div class="case-desc">할인 설정 전에 주문했지만, 할인 기간 내에 리뷰를 작성하고 재주문한 경우</div>
+        <span class="result-badge result-o">✔ 재주문 할인 적용</span>
+        <svg class="tl-svg" viewBox="0 0 360 90" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"   y="10" width="72"  height="28" fill="#f3f5f7"/>
+          <rect x="72"  y="10" width="234" height="28" fill="#185FA5"/>
+          <rect x="306" y="10" width="54"  height="28" fill="#f3f5f7"/>
+          <text x="36"  y="29" text-anchor="middle" font-size="10" fill="#999">할인 설정 전</text>
+          <text x="189" y="29" text-anchor="middle" font-size="10" fill="#B5D4F4">할인 기간</text>
+          <text x="333" y="29" text-anchor="middle" font-size="10" fill="#999">종료 후</text>
+          <line x1="0" y1="38" x2="360" y2="38" stroke="#d0d2d5" stroke-width="2"/>
+          <polygon points="43,32 38,26 48,26" fill="#888780"/>
+          <circle cx="43" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="43" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문</text>
+          <polygon points="173,32 168,26 178,26" fill="#185FA5"/>
+          <circle cx="173" cy="38" r="7" fill="#185FA5" stroke="#fff" stroke-width="2"/>
+          <text x="173" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 작성</text>
+          <polygon points="270,32 265,26 275,26" fill="#185FA5"/>
+          <circle cx="270" cy="38" r="7" fill="#3B6D11" stroke="#fff" stroke-width="2"/>
+          <text x="270" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">재주문</text>
+        </svg>
+        <div class="rule-box">
+          <span>ℹ️</span>
+          <span><strong>최초 주문 시점은 무관</strong>해요. 리뷰가 할인 기간 내에 작성되고, 재주문도 기간 안에 이뤄지면 할인이 적용돼요.</span>
+        </div>
+      </div>
 
-function buildTabs() {
-  const row = document.getElementById('tabs');
-  CASES.forEach((c, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
-    btn.dataset.idx = i;
-    btn.textContent = c.title;
-    btn.style.border = i === 0
-      ? `2.5px solid ${BORDER[c.resultType]}`
-      : IDLE_BORDER;
-    row.appendChild(btn);
-  });
-}
+      <hr class="divider" />
 
-function setTabStyles(activeIdx) {
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    if (i === activeIdx) {
-      btn.classList.add('active');
-      btn.style.border = `2.5px solid ${BORDER[CASES[i].resultType]}`;
-    } else {
-      btn.classList.remove('active');
-      btn.style.border = IDLE_BORDER;
+      <!-- 예시 5 -->
+      <div class="card">
+        <div class="case-desc">2회 주문 후 할인 기간 내에 리뷰를 2건 작성한 경우, 재주문 할인은 1회만 적용</div>
+        <span class="result-badge result-partial">▲ 재주문 할인 1회만 적용</span>
+        <svg class="tl-svg" viewBox="0 0 360 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"   y="10" width="36"  height="28" fill="#f3f5f7"/>
+          <rect x="36"  y="10" width="288" height="28" fill="#185FA5"/>
+          <rect x="324" y="10" width="36"  height="28" fill="#f3f5f7"/>
+          <text x="18"  y="29" text-anchor="middle" font-size="9"  fill="#999">설정 전</text>
+          <text x="180" y="29" text-anchor="middle" font-size="10" fill="#B5D4F4">할인 기간</text>
+          <text x="342" y="29" text-anchor="middle" font-size="9"  fill="#999">종료 후</text>
+          <line x1="0" y1="38" x2="360" y2="38" stroke="#d0d2d5" stroke-width="2"/>
+          <polygon points="65,32 60,26 70,26" fill="#888780"/>
+          <circle cx="65" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="65" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문 1</text>
+          <polygon points="115,32 110,26 120,26" fill="#888780"/>
+          <circle cx="115" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="115" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문 2</text>
+          <polygon points="180,32 175,26 185,26" fill="#185FA5"/>
+          <circle cx="180" cy="38" r="7" fill="#185FA5" stroke="#fff" stroke-width="2"/>
+          <text x="180" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 1</text>
+          <polygon points="230,32 225,26 235,26" fill="#185FA5"/>
+          <circle cx="230" cy="38" r="7" fill="#185FA5" stroke="#fff" stroke-width="2"/>
+          <text x="230" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 2</text>
+          <polygon points="295,32 290,26 300,26" fill="#185FA5"/>
+          <circle cx="295" cy="38" r="7" fill="#3B6D11" stroke="#fff" stroke-width="2"/>
+          <text x="295" y="54" text-anchor="middle" font-size="11" font-weight="500" fill="#555">재주문</text>
+          <text x="295" y="68" text-anchor="middle" font-size="10" fill="#888">(1회만 적용)</text>
+        </svg>
+        <div class="rule-box">
+          <span>ℹ️</span>
+          <span><strong>직전 리뷰 1건</strong>에 대해서만 할인이 적용돼요. (누적 적용 X)</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 아코디언 2: 할인 미적용 -->
+  <div class="accordion" id="acc2">
+    <div class="acc-header" onclick="toggle('acc2')">
+      <div class="acc-header-left">
+        <span class="badge-x">✖</span>
+        이럴땐 재주문 할인이 적용되지 않아요 (클릭)
+      </div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+
+      <!-- 예시 3 -->
+      <div class="card">
+        <div class="case-desc">할인 설정 전에 주문과 리뷰 작성을 완료했고, 할인 기간에 재주문한 경우</div>
+        <span class="result-badge result-x">✖ 재주문 할인 미적용</span>
+        <svg class="tl-svg" viewBox="0 0 360 90" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"   y="10" width="126" height="28" fill="#f3f5f7"/>
+          <rect x="126" y="10" width="180" height="28" fill="#185FA5"/>
+          <rect x="306" y="10" width="54"  height="28" fill="#f3f5f7"/>
+          <text x="63"  y="29" text-anchor="middle" font-size="10" fill="#999">할인 설정 전</text>
+          <text x="216" y="29" text-anchor="middle" font-size="10" fill="#B5D4F4">할인 기간</text>
+          <text x="333" y="29" text-anchor="middle" font-size="10" fill="#999">종료 후</text>
+          <line x1="0" y1="38" x2="360" y2="38" stroke="#d0d2d5" stroke-width="2"/>
+          <polygon points="43,32 38,26 48,26" fill="#888780"/>
+          <circle cx="43" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="43" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문</text>
+          <polygon points="90,32 85,26 95,26" fill="#888780"/>
+          <circle cx="90" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="90" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 작성</text>
+          <polygon points="216,32 211,26 221,26" fill="#E24B4A"/>
+          <circle cx="216" cy="38" r="7" fill="#A32D2D" stroke="#fff" stroke-width="2"/>
+          <text x="216" y="54" text-anchor="middle" font-size="11" font-weight="500" fill="#555">재주문</text>
+          <text x="216" y="68" text-anchor="middle" font-size="10" fill="#A32D2D">(할인 미적용)</text>
+        </svg>
+        <div class="rule-box">
+          <span>ℹ️</span>
+          <span>리뷰가 <strong>할인 기간 이전</strong>에 작성됐기 때문에 적용 대상이 아니에요. 기간 내 리뷰 작성이 기준이에요.</span>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- 예시 4 -->
+      <div class="card">
+        <div class="case-desc">할인 기간 내에 주문과 리뷰 작성을 완료했고, 할인 종료 후에 재주문한 경우</div>
+        <span class="result-badge result-x">✖ 재주문 할인 미적용</span>
+        <svg class="tl-svg" viewBox="0 0 360 90" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"   y="10" width="43"  height="28" fill="#f3f5f7"/>
+          <rect x="43"  y="10" width="191" height="28" fill="#185FA5"/>
+          <rect x="234" y="10" width="126" height="28" fill="#f3f5f7"/>
+          <text x="21"  y="29" text-anchor="middle" font-size="9"  fill="#999">설정 전</text>
+          <text x="139" y="29" text-anchor="middle" font-size="10" fill="#B5D4F4">할인 기간</text>
+          <text x="297" y="29" text-anchor="middle" font-size="10" fill="#999">종료 후</text>
+          <line x1="0" y1="38" x2="360" y2="38" stroke="#d0d2d5" stroke-width="2"/>
+          <polygon points="101,32 96,26 106,26" fill="#888780"/>
+          <circle cx="101" cy="38" r="7" fill="#888780" stroke="#fff" stroke-width="2"/>
+          <text x="101" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">주문</text>
+          <polygon points="180,32 175,26 185,26" fill="#185FA5"/>
+          <circle cx="180" cy="38" r="7" fill="#185FA5" stroke="#fff" stroke-width="2"/>
+          <text x="180" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#555">리뷰 작성</text>
+          <polygon points="288,32 283,26 293,26" fill="#E24B4A"/>
+          <circle cx="288" cy="38" r="7" fill="#A32D2D" stroke="#fff" stroke-width="2"/>
+          <text x="288" y="54" text-anchor="middle" font-size="11" font-weight="500" fill="#555">재주문</text>
+          <text x="288" y="68" text-anchor="middle" font-size="10" fill="#A32D2D">(할인 미적용)</text>
+        </svg>
+        <div class="rule-box">
+          <span>ℹ️</span>
+          <span>재주문이 <strong>할인 종료 후</strong>에 이뤄지면, 할인이 적용되지 않아요.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function toggle(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('open');
     }
-  });
-}
+  </script>
 
-function renderCase(idx) {
-  const c = CASES[idx];
-  const segHtml = c.segments.map(s =>
-    `<div class="seg seg-${s.type}" style="width:${s.w}%">${s.label}</div>`
-  ).join('');
-  const eventsHtml = c.events.map(e => {
-    const arrowCls = e.arrow==='blue' ? 'arrow-blue' : e.arrow==='red' ? 'arrow-red' : 'arrow-gray';
-    const lb = e.label.replace('\n','<br>');
-    return `<div class="event" style="left:${e.pct}%">
-      <div class="down-arrow ${arrowCls}"></div>
-      <div class="event-dot ${e.dot}"></div>
-      <div class="event-label">${lb}</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('content').innerHTML = `
-    <div class="case-title">${c.title}</div>
-    <div class="case-desc">${c.desc}</div>
-    <span class="result-badge result-${c.resultType}">
-      ${iconMap[c.resultType]} ${c.resultLabel}
-    </span>
-    <div class="tl-wrap">
-      <div class="segments-row">${segHtml}</div>
-      <div class="axis-line"></div>
-      <div class="events-row">${eventsHtml}</div>
-    </div>
-    <div class="rule-box">
-      <span class="rule-icon">ℹ️</span>
-      <span>${c.rule}</span>
-    </div>
-  `;
-}
-
-document.getElementById('tabs').addEventListener('click', e => {
-  const btn = e.target.closest('.tab-btn');
-  if (!btn) return;
-  const idx = +btn.dataset.idx;
-  setTabStyles(idx);
-  renderCase(idx);
-});
-
-buildTabs();
-renderCase(0);
-</script>
 </body>
 </html>
