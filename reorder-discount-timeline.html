@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>재주문 즉시할인 적용 예시</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #ffffff;
+      padding: 16px;
+      color: #333333;
+    }
+    .tab-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab-btn {
+      font-size: 13px; font-weight: 500; padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #cccccc;
+      background: #ffffff;
+      color: #666666;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .tab-btn.active {
+      color: #111111;
+      background: #f3f5f7;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e4e6e8;
+      border-radius: 12px;
+      padding: 20px 16px 16px;
+    }
+    .case-title { font-size: 16px; font-weight: 700; color: #111111; margin-bottom: 6px; }
+    .case-desc  { font-size: 14px; color: #666666; margin-bottom: 14px; line-height: 1.55; }
+    .result-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 14px; font-weight: 700; padding: 5px 13px;
+      border-radius: 20px; margin-bottom: 18px;
+    }
+    .result-o       { background: #EAF3DE; color: #3B6D11; }
+    .result-x       { background: #FCEBEB; color: #A32D2D; }
+    .result-partial { background: #FAEEDA; color: #633806; }
+
+    .tl-wrap { position: relative; padding-bottom: 8px; }
+    .axis-line {
+      position: absolute; left: 0; right: 0;
+      height: 2px; background: #d0d2d5; top: 56px;
+    }
+    .segments-row {
+      position: absolute; left: 0; right: 0; top: 24px; height: 32px; display: flex;
+    }
+    .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+    .seg-off { background: #f3f5f7; color: #999999; }
+    .seg-on  { background: #185FA5; color: #B5D4F4; }
+
+    .events-row { position: relative; height: 130px; }
+    .event {
+      position: absolute; display: flex; flex-direction: column; align-items: center;
+      transform: translateX(-50%);
+    }
+    .event-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      margin-top: 49px; border: 2.5px solid #ffffff;
+    }
+    .dot-order     { background: #888780; }
+    .dot-review    { background: #185FA5; }
+    .dot-reorder   { background: #3B6D11; }
+    .dot-reorder-x { background: #A32D2D; }
+    .event-label {
+      font-size: 13px; font-weight: 500; color: #555555;
+      margin-top: 7px; white-space: nowrap; text-align: center; line-height: 1.35;
+    }
+    .down-arrow {
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      position: absolute; top: 43px;
+    }
+    .arrow-blue { border-top: 8px solid #185FA5; }
+    .arrow-red  { border-top: 8px solid #E24B4A; }
+    .arrow-gray { border-top: 8px solid #888780; }
+
+    .rule-box {
+      background: #f3f5f7; border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px; color: #555555; line-height: 1.65;
+      display: flex; align-items: flex-start; gap: 6px;
+    }
+    .rule-box strong { color: #111111; font-weight: 700; }
+    .rule-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  </style>
+</head>
+<body>
+
+<div class="tab-row" id="tabs"></div>
+<div class="card" id="content"></div>
+
+<script>
+const BORDER = { o: '#3B6D11', x: '#A32D2D', partial: '#854F0B' };
+const IDLE_BORDER = '1.5px solid #cccccc';
+
+const CASES = [
+  {
+    title:"예시 1", resultType:"o",
+    desc:"할인 기간 내에 주문·리뷰 작성·재주문을 모두 완료한 경우",
+    resultLabel:"재주문 할인 적용",
+    rule:"리뷰가 <strong>할인 기간 내</strong>에 작성됐고, 재주문도 <strong>기간 안</strong>에 이뤄졌어요.",
+    segments:[{label:"할인 설정 전",w:15,type:"off"},{label:"할인 기간",w:70,type:"on"},{label:"종료 후",w:15,type:"off"}],
+    events:[{pct:25,label:"주문",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:75,label:"재주문",arrow:"blue",dot:"dot-reorder"}]
+  },
+  {
+    title:"예시 2", resultType:"o",
+    desc:"할인 설정 전에 주문했지만, 할인 기간 내에 리뷰를 작성하고 재주문한 경우",
+    resultLabel:"재주문 할인 적용",
+    rule:"<strong>최초 주문 시점은 무관</strong>해요. 리뷰가 할인 기간 내에 작성되고, 재주문도 기간 안에 이뤄지면 할인이 적용돼요.",
+    segments:[{label:"할인 설정 전",w:20,type:"off"},{label:"할인 기간",w:65,type:"on"},{label:"종료 후",w:15,type:"off"}],
+    events:[{pct:12,label:"주문",arrow:"gray",dot:"dot-order"},{pct:45,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:72,label:"재주문",arrow:"blue",dot:"dot-reorder"}]
+  },
+  {
+    title:"예시 3", resultType:"x",
+    desc:"할인 설정 전에 주문과 리뷰 작성을 완료했고, 할인 기간에 재주문한 경우",
+    resultLabel:"재주문 할인 미적용",
+    rule:"리뷰가 <strong>할인 기간 이전</strong>에 작성됐기 때문에 적용 대상이 아니에요. 기간 내 리뷰 작성이 기준이에요.",
+    segments:[{label:"할인 설정 전",w:35,type:"off"},{label:"할인 기간",w:50,type:"on"},{label:"종료 후",w:15,type:"off"}],
+    events:[{pct:12,label:"주문",arrow:"gray",dot:"dot-order"},{pct:25,label:"리뷰 작성",arrow:"gray",dot:"dot-order"},{pct:60,label:"재주문\n(할인 미적용)",arrow:"red",dot:"dot-reorder-x"}]
+  },
+  {
+    title:"예시 4", resultType:"x",
+    desc:"할인 기간 내에 주문과 리뷰 작성을 완료했고, 할인 종료 후에 재주문한 경우",
+    resultLabel:"재주문 할인 미적용",
+    rule:"재주문이 <strong>할인 종료 후</strong>에 이뤄지면, 할인이 적용되지 않아요.",
+    segments:[{label:"할인 설정 전",w:12,type:"off"},{label:"할인 기간",w:53,type:"on"},{label:"종료 후",w:35,type:"off"}],
+    events:[{pct:28,label:"주문",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 작성",arrow:"blue",dot:"dot-review"},{pct:80,label:"재주문\n(할인 미적용)",arrow:"red",dot:"dot-reorder-x"}]
+  },
+  {
+    title:"예시 5", resultType:"partial",
+    desc:"2회 주문 후 할인 기간 내에 리뷰를 2건 작성한 경우, 재주문 할인은 1회만 적용",
+    resultLabel:"재주문 할인 1회만 적용",
+    rule:"<strong>직전 리뷰 1건</strong>에 대해서만 할인이 적용돼요. (누적 적용 X)",
+    segments:[{label:"할인 설정 전",w:10,type:"off"},{label:"할인 기간",w:80,type:"on"},{label:"종료 후",w:10,type:"off"}],
+    events:[{pct:18,label:"주문 1",arrow:"gray",dot:"dot-order"},{pct:32,label:"주문 2",arrow:"gray",dot:"dot-order"},{pct:50,label:"리뷰 1",arrow:"blue",dot:"dot-review"},{pct:64,label:"리뷰 2",arrow:"blue",dot:"dot-review"},{pct:82,label:"재주문\n(1회만 적용)",arrow:"blue",dot:"dot-reorder"}]
+  }
+];
+
+const iconMap = { o:'✔', x:'✖', partial:'▲' };
+
+function buildTabs() {
+  const row = document.getElementById('tabs');
+  CASES.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.dataset.idx = i;
+    btn.textContent = c.title;
+    btn.style.border = i === 0
+      ? `2.5px solid ${BORDER[c.resultType]}`
+      : IDLE_BORDER;
+    row.appendChild(btn);
+  });
+}
+
+function setTabStyles(activeIdx) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    if (i === activeIdx) {
+      btn.classList.add('active');
+      btn.style.border = `2.5px solid ${BORDER[CASES[i].resultType]}`;
+    } else {
+      btn.classList.remove('active');
+      btn.style.border = IDLE_BORDER;
+    }
+  });
+}
+
+function renderCase(idx) {
+  const c = CASES[idx];
+  const segHtml = c.segments.map(s =>
+    `<div class="seg seg-${s.type}" style="width:${s.w}%">${s.label}</div>`
+  ).join('');
+  const eventsHtml = c.events.map(e => {
+    const arrowCls = e.arrow==='blue' ? 'arrow-blue' : e.arrow==='red' ? 'arrow-red' : 'arrow-gray';
+    const lb = e.label.replace('\n','<br>');
+    return `<div class="event" style="left:${e.pct}%">
+      <div class="down-arrow ${arrowCls}"></div>
+      <div class="event-dot ${e.dot}"></div>
+      <div class="event-label">${lb}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('content').innerHTML = `
+    <div class="case-title">${c.title}</div>
+    <div class="case-desc">${c.desc}</div>
+    <span class="result-badge result-${c.resultType}">
+      ${iconMap[c.resultType]} ${c.resultLabel}
+    </span>
+    <div class="tl-wrap">
+      <div class="segments-row">${segHtml}</div>
+      <div class="axis-line"></div>
+      <div class="events-row">${eventsHtml}</div>
+    </div>
+    <div class="rule-box">
+      <span class="rule-icon">ℹ️</span>
+      <span>${c.rule}</span>
+    </div>
+  `;
+}
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  const idx = +btn.dataset.idx;
+  setTabStyles(idx);
+  renderCase(idx);
+});
+
+buildTabs();
+renderCase(0);
+</script>
+</body>
+</html>
