@@ -217,11 +217,6 @@
 </div>
 
 <script>
-function sendHeight() {
-  const h = document.documentElement.scrollHeight;
-  window.parent.postMessage({ iframeHeight: h }, '*');
-}
-
 function toggle(group) {
   const content = document.getElementById('content-' + group);
   const btn = document.getElementById('btn-' + group);
@@ -234,11 +229,7 @@ function toggle(group) {
     content.classList.add('open');
     btn.classList.add('active-' + group);
   }
-  setTimeout(sendHeight, 50);
 }
-
-window.addEventListener('load', sendHeight);
-window.addEventListener('resize', sendHeight);
 </script>
 </body>
 </html>
